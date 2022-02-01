@@ -2,21 +2,52 @@ package com.cos.blog.test;
 
 import java.util.function.Supplier;
 
+import javax.transaction.Transactional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cos.blog.model.RoleType;
 import com.cos.blog.model.User;
 import com.cos.blog.repository.UserRepository;
 
+//html 파일이 아니라 data를 리턴 해주는 controller = RestController
 @RestController
 public class DummyControllerTest {
 	
 	@Autowired //의존성 주입(DI)
 	private UserRepository userRepository;
+	
+	@Transactional
+	@PutMapping("/dummy/user/{id}")
+	public User updateUser(@PathVariable int id, @RequestBody User requestUser) { 
+		
+		//@RequestBody
+		//json 데이터를 요청 => java Object(MessageConverter의 JackSon라이브러리가)로 변환해서 받는다.
+		
+		System.out.println("id : " + id);
+		System.out.println("password : " + requestUser.getPassword());
+		System.out.println("email : " + requestUser.getEmail());
+		
+		User user = userRepository.findById(id).orElseThrow(()-> {
+			return new IllegalArgumentException("수정에 실패하였습니다.");
+		});
+		
+		user.setPassword(requestUser.getPassword());
+		user.setEmail(requestUser.getEmail());
+		
+		//save 함수는 id를 전달하지 않으면 insert를 해주고
+		//save 함수는 id를 전당하면 해당 id에 대한 데이터가 있으면 update를 해주고
+		//save 함수는 id를 전달하면 해당 id에 대한 데이터가 업으면 insert를 한다
+//		userRepository.save(requestUser);
+		
+		return null;
+	}
 	
 	// {id} 주소로 파라미터를 전달 받을 수 있음
 	// http://localhost:8088/blog/dummy/user/3
@@ -38,7 +69,14 @@ public class DummyControllerTest {
 		//	User user = userRepository.findById(id).orElseThrow(()-> {
 		//		return new IllegalArgumentException("해당 사용자는 없습니다.");
 		//	});
+
 		
+		//요청 : 웹브라우저
+		//user 객체 = 자바 object
+		// 변환 (웹 브라우저가 이해할 수 있는 데이터) -> json (Gson 라이브러리)
+		// SpringBoot = MessageConverter 라는 애가 응답시에 자동 작동
+		// 만약 자바 object를 리턴하게 되면 MessageConverter가 Jackson 라이브러리를 호출해서
+		// user object를 json으로 변환해서 브라우저에게 던져준다.
 		return user;
 	}
 
